@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
+import os
 import cv2
 from argh import ArghParser, arg
+
+frame = 0
+record = False
+
+def write_frame(img):
+    if not record: return
+    global frame 
+    frame += 1
+    cv2.imwrite('frames/frame{:02d}.png'.format(frame), img)
 
 def get_contours(img):
     """Threshold the image and get contours."""
@@ -10,17 +20,25 @@ def get_contours(img):
     # Find the right threshold level
     tl = 100
     ret, thresh = cv2.threshold(imgray, tl, 255, 0)
+    write_frame(thresh)
     while white_percent(thresh) > 0.85:
         tl += 10
         ret, thresh = cv2.threshold(imgray, tl, 255, 0)
+        write_frame(thresh)
 
-    # for debugging
-    #cv2.imwrite('thresh.jpg', thresh)
     img2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
+    if record:
+        ii = img.copy()
+        cv2.drawContours(ii, contours, -1, (0,255,0), 3)
+        write_frame(ii)
 
     # filter contours that are too large or small
     size = get_size(img)
-    contours = [cc for cc in contours if contourOK(cc, size)]
+    contours = [cc for cc in contours if contourOK(img, cc, size)]
+    if record:
+        ii = img.copy()
+        cv2.drawContours(ii, contours, -1, (0,255,0), 3) # draws contours, good for debugging
+        write_frame(ii)
     return contours
 
 def get_size(img):
@@ -32,11 +50,12 @@ def white_percent(img):
     """Return the percentage of the thresholded image that's white."""
     return cv2.countNonZero(img) / get_size(img)
 
-def contourOK(cc, size=1000000):
+def contourOK(img, cc, size=1000000):
     """Check if the contour is a good predictor of photo location."""
     x, y, w, h = cv2.boundingRect(cc)
     if w < 50 or h < 50: return False # too narrow or wide is bad
     area = cv2.contourArea(cc)
+    if near_edge(img, cc): return False # shouldn't be near edges
     return area < (size * 0.5) and area > 200
 
 def near_edge(img, contour):
@@ -49,8 +68,7 @@ def near_edge(img, contour):
             or y < mm
             or y + h > ih - mm)
 
-
-def get_boundaries(img, contours):
+def get_boundaries(img, contours, record=False):
     """Find the boundaries of the photo in the image using contours."""
     # margin is the minimum distance from the edges of the image, as a fraction
     ih, iw = img.shape[:2]
@@ -60,12 +78,16 @@ def get_boundaries(img, contours):
     maxy = 0
 
     for cc in contours:
-        if near_edge(img, cc): continue
         x, y, w, h = cv2.boundingRect(cc)
         if x < minx: minx = x
         if y < miny: miny = y
         if x + w > maxx: maxx = x + w
         if y + h > maxy: maxy = y + h
+
+    if record:
+        img2 = img.copy()
+        cv2.rectangle(img2, (minx, miny), (maxx, maxy), (255, 255, 0), 3)
+        write_frame(img2)
 
     return (minx, miny, maxx, maxy)
 
@@ -74,20 +96,28 @@ def crop(img, boundaries):
     minx, miny, maxx, maxy = boundaries
     return img[miny:maxy, minx:maxx]
 
-def autocrop_image(input_file, output_file=None):
+def autocrop_image(input_file, output_file=None, record_process=False):
     """Autocrop the photograph from the given image."""
-    if not ofname:
-        parts = fname.split('.')
-        assert len(parts) > 1, "Can't automatically choose output name if there's no file extension!"
-        ofname = '.'.join(parts[:-1], 'cropped', parts[-1])
 
-    img = cv2.imread(fname)
+    # global to track if process frames should be written
+    global record
+    record = record_process
+    if record:
+        os.makedirs('frames', exist_ok=True)
+
+    if not output_file:
+        parts = input_file.split('.')
+        assert len(parts) > 1, "Can't automatically choose output name if there's no file extension!"
+        output_file = '.'.join([*parts[:-1], 'cropped', parts[-1]])
+
+    img = cv2.imread(input_file)
+    write_frame(img)
+
     contours = get_contours(img)
-    #cv2.drawContours(img, contours, -1, (0,255,0)) # draws contours, good for debugging
-    bounds = get_boundaries(img, contours)
+    bounds = get_boundaries(img, contours, record)
     cropped = crop(img, bounds)
     if get_size(cropped) < 10000: return # too small
-    cv2.imwrite(ofname, cropped)
+    cv2.imwrite(output_file, cropped)
 
 if __name__ == '__main__':
     parser = ArghParser()
