@@ -6,10 +6,16 @@ from argh import ArghParser, arg
 frame = 0
 record = False
 
-def write_frame(img):
+def write_frame(img, contours=None, rect=None):
     if not record: return
     global frame 
     frame += 1
+    if contours:
+        img = img.copy()
+        cv2.drawContours(img, contours, -1, (0,255,0), 3)
+    if rect:
+        img = img.copy()
+        cv2.rectangle(img, (rect[0], rect[1]), (rect[2], rect[2]), (255, 255, 0), 3)
     cv2.imwrite('frames/frame{:02d}.png'.format(frame), img)
 
 def get_contours(img):
@@ -27,18 +33,12 @@ def get_contours(img):
         write_frame(thresh)
 
     img2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
-    if record:
-        ii = img.copy()
-        cv2.drawContours(ii, contours, -1, (0,255,0), 3)
-        write_frame(ii)
+    write_frame(img, contours=contours)
 
     # filter contours that are too large or small
     size = get_size(img)
     contours = [cc for cc in contours if contourOK(img, cc, size)]
-    if record:
-        ii = img.copy()
-        cv2.drawContours(ii, contours, -1, (0,255,0), 3) # draws contours, good for debugging
-        write_frame(ii)
+    write_frame(img, contours=contours)
     return contours
 
 def get_size(img):
@@ -84,10 +84,7 @@ def get_boundaries(img, contours, record=False):
         if x + w > maxx: maxx = x + w
         if y + h > maxy: maxy = y + h
 
-    if record:
-        img2 = img.copy()
-        cv2.rectangle(img2, (minx, miny), (maxx, maxy), (255, 255, 0), 3)
-        write_frame(img2)
+    write_frame(img, rect=(minx, miny, maxx, maxy))
 
     return (minx, miny, maxx, maxy)
 
