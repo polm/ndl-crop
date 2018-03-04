@@ -36,8 +36,7 @@ def get_contours(img):
     write_frame(img, contours=contours)
 
     # filter contours that are too large or small
-    size = get_size(img)
-    contours = [cc for cc in contours if contourOK(img, cc, size)]
+    contours = [cc for cc in contours if contourOK(img, cc)]
     write_frame(img, contours=contours)
     return contours
 
@@ -50,25 +49,27 @@ def white_percent(img):
     """Return the percentage of the thresholded image that's white."""
     return cv2.countNonZero(img) / get_size(img)
 
-def contourOK(img, cc, size=1000000):
+def contourOK(img, cc):
     """Check if the contour is a good predictor of photo location."""
-    x, y, w, h = cv2.boundingRect(cc)
-    if w < 50 or h < 50: return False # too narrow or wide is bad
-    area = cv2.contourArea(cc)
     if near_edge(img, cc): return False # shouldn't be near edges
-    return area < (size * 0.5) and area > 200
+    x, y, w, h = cv2.boundingRect(cc)
+    if w < 100 or h < 100: return False # too narrow or wide is bad
+    area = cv2.contourArea(cc)
+    if area > (get_size(img) * 0.3): return False
+    if area < 200: return False
+    return True
 
 def near_edge(img, contour):
     """Check if a contour is near the edge in the given image."""
     x, y, w, h = cv2.boundingRect(contour)
     ih, iw = img.shape[:2]
-    mm = 20 # margin in pixels
+    mm = 80 # margin in pixels
     return (x < mm
             or x + w > iw - mm
             or y < mm
             or y + h > ih - mm)
 
-def get_boundaries(img, contours, record=False):
+def get_boundaries(img, contours):
     """Find the boundaries of the photo in the image using contours."""
     # margin is the minimum distance from the edges of the image, as a fraction
     ih, iw = img.shape[:2]
@@ -111,9 +112,11 @@ def autocrop_image(input_file, output_file=None, record_process=False):
     write_frame(img)
 
     contours = get_contours(img)
-    bounds = get_boundaries(img, contours, record)
+    bounds = get_boundaries(img, contours)
     cropped = crop(img, bounds)
-    if get_size(cropped) < 10000: return # too small
+    if get_size(cropped) < 10000: 
+        print("resulting image too small, skipping output")
+        return # too small
     cv2.imwrite(output_file, cropped)
 
 if __name__ == '__main__':
