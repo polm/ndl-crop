@@ -1,0 +1,4 @@
+argh==0.26.2
+numpy==1.14.1
+opencv-python==3.4.0.12
+Pillow==5.0.0
