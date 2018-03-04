@@ -58,6 +58,7 @@ well in the following cases.
 - scans with calibration scales in the margins
 - scans where the boundary between the photo and the paper is unclear
 - album covers
+- any image more than slightly rotated
 
 ## Making a Process GIF
 
