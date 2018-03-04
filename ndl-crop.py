@@ -15,7 +15,7 @@ def write_frame(img, contours=None, rect=None):
         cv2.drawContours(img, contours, -1, (0,255,0), 3)
     if rect:
         img = img.copy()
-        cv2.rectangle(img, (rect[0], rect[1]), (rect[2], rect[2]), (255, 255, 0), 3)
+        cv2.rectangle(img, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 0), 3)
     cv2.imwrite('frames/frame{:02d}.png'.format(frame), img)
 
 def get_contours(img):
