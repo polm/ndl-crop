@@ -32,6 +32,12 @@ def get_contours(img):
         ret, thresh = cv2.threshold(imgray, tl, 255, 0)
         write_frame(thresh)
 
+    #version checking        
+    major = cv2.__version__.split('.')[0]
+    if major == '3':
+        ret, contours, hierarchy = cv2.findContours(im.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    else:
+        contours, hierarchy = cv2.findContours(im.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     img2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
     write_frame(img, contours=contours)
 
