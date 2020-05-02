@@ -32,7 +32,7 @@ def get_contours(img):
         ret, thresh = cv2.threshold(imgray, tl, 255, 0)
         write_frame(thresh)
 
-    img2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
+    contours, hierarchy = cv2.findContours(thresh, 1, 2)
     write_frame(img, contours=contours)
 
     # filter contours that are too large or small
