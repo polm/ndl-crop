@@ -55,7 +55,7 @@ def contourOK(img, cc):
     x, y, w, h = cv2.boundingRect(cc)
     if w < 100 or h < 100: return False # too narrow or wide is bad
     area = cv2.contourArea(cc)
-    if area > (get_size(img) * 0.3): return False
+    if area < (get_size(img) * 0.3): return False
     if area < 200: return False
     return True
 
@@ -63,7 +63,7 @@ def near_edge(img, contour):
     """Check if a contour is near the edge in the given image."""
     x, y, w, h = cv2.boundingRect(contour)
     ih, iw = img.shape[:2]
-    mm = 80 # margin in pixels
+    mm = 0 # margin in pixels
     return (x < mm
             or x + w > iw - mm
             or y < mm
