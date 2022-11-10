@@ -1,8 +1,16 @@
+**Update 2022-11-10:**
+
+This is a script I wrote on a weekend once years ago. It would be great if it
+helped you somehow, but there's probably better ways to do this. I don't
+provide support for this script and can't help you with your project.
+
 # ndl-crop
 
 This is a script to crop scans of old photobooks from the NDL like those linked
 [here](http://dl.ndl.go.jp/ja/photo.html). It's written for Python 3 and uses
 OpenCV for the heavy lifting.
+
+ 
 
 ## Examples
 
